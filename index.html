@@ -341,9 +341,14 @@ function typeBadge(t){
 }
 
 /* ---------- RENDER ROOT ---------- */
+function removeOverlay(){
+  const existing = document.getElementById('modalOverlay');
+  if(existing) existing.remove();
+}
 function render(){
   if(!isConfigured()) return;
   if(!state.loaded) return;
+  removeOverlay();
   if(!state.session) return renderAuth();
   return renderApp();
 }
