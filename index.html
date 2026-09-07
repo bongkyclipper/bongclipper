@@ -90,6 +90,8 @@
   .badge.jual{background:var(--accent-soft);color:#0B7B65;}
   .badge.keluar{background:var(--danger-soft);color:var(--danger);}
   .badge.masuk{background:var(--blue-soft);color:var(--blue);}
+  .badge.isi{background:var(--amber-soft);color:var(--amber);}
+  .field-hint{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
   .ledger-row .info{flex:1;min-width:0;}
   .ledger-row .title{font-size:13.5px;font-weight:600;}
   .ledger-row .meta{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
@@ -297,12 +299,13 @@ function cashEffect(e){
   if(e.type==='pengeluaran') return -Number(e.amount);
   if(e.type==='modal_masuk') return Number(e.amount);
   if(e.type==='modal_keluar') return -Number(e.amount);
+  if(e.type==='isi_saldo') return -Number(e.amount);
   return 0;
 }
 function saldoKas(){ return state.entries.reduce((s,e)=>s+cashEffect(e),0); }
 function saldoModalPulsa(){
   return state.entries.reduce((s,e)=>{
-    if(e.type==='modal_masuk') return s + Number(e.amount);
+    if(e.type==='isi_saldo') return s + Number(e.amount);
     if(e.type==='penjualan') return s - Number(e.modal);
     return s;
   }, 0);
@@ -344,12 +347,13 @@ function toast(msg){
   window.__tt = setTimeout(()=>t.classList.remove('show'), 2400);
 }
 function typeLabel(t){
-  return {penjualan:'Penjualan', pengeluaran:'Pengeluaran', modal_masuk:'Setor Modal', modal_keluar:'Ambil Kas'}[t];
+  return {penjualan:'Penjualan', pengeluaran:'Pengeluaran', modal_masuk:'Setor Modal', modal_keluar:'Ambil Kas', isi_saldo:'Isi Saldo Pulsa'}[t];
 }
 function typeBadge(t){
   if(t==='penjualan') return {cls:'jual', ic:'&#8593;'};
   if(t==='pengeluaran') return {cls:'keluar', ic:'&#8595;'};
   if(t==='modal_masuk') return {cls:'masuk', ic:'&#43;'};
+  if(t==='isi_saldo') return {cls:'isi', ic:'&#8635;'};
   return {cls:'keluar', ic:'&#8722;'};
 }
 
@@ -527,7 +531,7 @@ function renderBukuKas(body){
     dfRow.appendChild(c);
   });
 
-  const typeFilters = [['semua','Semua Tipe'],['penjualan','Penjualan'],['pengeluaran','Pengeluaran'],['modal_masuk','Setor Modal'],['modal_keluar','Ambil Kas']];
+  const typeFilters = [['semua','Semua Tipe'],['penjualan','Penjualan'],['pengeluaran','Pengeluaran'],['modal_masuk','Setor Modal'],['isi_saldo','Isi Saldo Pulsa'],['modal_keluar','Ambil Kas']];
   const tfRow = body.querySelector('#typeFilterRow');
   typeFilters.forEach(([key,label])=>{
     const c = document.createElement('button');
@@ -579,6 +583,9 @@ function ledgerRow(e, withActions){
   } else if(e.type==='pengeluaran'){
     title = e.category + (e.description ? ' — '+e.description : '');
     meta = dateLabel;
+  } else if(e.type==='isi_saldo'){
+    title = 'Isi Saldo Pulsa' + (e.description ? ' — '+e.description : '');
+    meta = dateLabel + ' · Dipindah dari Kas Usaha';
   } else {
     title = typeLabel(e.type) + (e.description ? ' — '+e.description : '');
     meta = dateLabel;
@@ -639,6 +646,7 @@ function renderModal(){
     {key:'penjualan', label:'Penjualan'},
     {key:'pengeluaran', label:'Pengeluaran'},
     {key:'modal_masuk', label:'Setor Modal'},
+    {key:'isi_saldo', label:'Isi Saldo Pulsa'},
     {key:'modal_keluar', label:'Ambil Kas'},
   ];
 
@@ -669,11 +677,17 @@ function renderModal(){
       <input class="field-input mono" id="fAmount" type="number" placeholder="0" value="${f.amount}">
     `;
   } else {
+    const placeholderMap = {
+      modal_masuk: 'Contoh: Setor modal awal dari pribadi',
+      modal_keluar: 'Contoh: Ambil untung bulanan',
+      isi_saldo: 'Contoh: Isi ulang saldo H2H via transfer'
+    };
     fieldsHtml = `
       <label class="field-label">Keterangan (opsional)</label>
-      <input class="field-input" id="fDesc" type="text" placeholder="${f.type==='modal_masuk' ? 'Contoh: Setor modal awal' : 'Contoh: Ambil untung bulanan'}" value="${f.desc}">
+      <input class="field-input" id="fDesc" type="text" placeholder="${placeholderMap[f.type]}" value="${f.desc}">
       <label class="field-label">Jumlah</label>
       <input class="field-input mono" id="fAmount" type="number" placeholder="0" value="${f.amount}">
+      ${f.type==='isi_saldo' ? `<div class="field-hint">Saldo Kas Usaha saat ini: ${rupiah(saldoKas())}. Nominal ini akan dipindahkan dari Kas ke Saldo Modal Pulsa.</div>` : ''}
     `;
   }
 
