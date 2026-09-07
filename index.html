@@ -167,6 +167,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ============================================================ */
 
 const rupiah = n => (n<0?'-':'') + 'Rp' + Math.abs(n).toLocaleString('id-ID');
+const digitsOnly = s => (s||'').toString().replace(/[^0-9]/g,'');
+const formatThousands = s => { const d = digitsOnly(s); return d ? Number(d).toLocaleString('id-ID') : ''; };
 const todayStr = () => new Date().toISOString().slice(0,10);
 
 const SALE_CATS = ['Pulsa','Paket Data','Token PLN','E-Wallet','Tagihan/PDAM','Voucher Game','Lainnya'];
@@ -660,9 +662,9 @@ function renderModal(){
       <label class="field-label">Keterangan (opsional)</label>
       <input class="field-input" id="fDesc" type="text" placeholder="Contoh: Telkomsel 20.000 a.n. Budi" value="${f.desc}">
       <label class="field-label">Harga Modal</label>
-      <input class="field-input mono" id="fModal" type="number" placeholder="0" value="${f.modal}">
+      <input class="field-input mono" id="fModal" type="text" inputmode="numeric" placeholder="0" value="${formatThousands(f.modal)}">
       <label class="field-label">Harga Jual (diterima dari pembeli)</label>
-      <input class="field-input mono" id="fJual" type="number" placeholder="0" value="${f.jual}">
+      <input class="field-input mono" id="fJual" type="text" inputmode="numeric" placeholder="0" value="${formatThousands(f.jual)}">
       <div class="laba-preview" id="labaPreview"><span>Laba transaksi ini</span><span class="mono">${rupiah((Number(f.jual)||0)-(Number(f.modal)||0))}</span></div>
     `;
   } else if(f.type==='pengeluaran'){
@@ -674,7 +676,7 @@ function renderModal(){
       <label class="field-label">Keterangan (opsional)</label>
       <input class="field-input" id="fDesc" type="text" placeholder="Contoh: Beli pulsa modal, bayar listrik" value="${f.desc}">
       <label class="field-label">Jumlah</label>
-      <input class="field-input mono" id="fAmount" type="number" placeholder="0" value="${f.amount}">
+      <input class="field-input mono" id="fAmount" type="text" inputmode="numeric" placeholder="0" value="${formatThousands(f.amount)}">
     `;
   } else {
     const placeholderMap = {
@@ -686,7 +688,7 @@ function renderModal(){
       <label class="field-label">Keterangan (opsional)</label>
       <input class="field-input" id="fDesc" type="text" placeholder="${placeholderMap[f.type]}" value="${f.desc}">
       <label class="field-label">Jumlah</label>
-      <input class="field-input mono" id="fAmount" type="number" placeholder="0" value="${f.amount}">
+      <input class="field-input mono" id="fAmount" type="text" inputmode="numeric" placeholder="0" value="${formatThousands(f.amount)}">
       ${f.type==='isi_saldo' ? `<div class="field-hint">Saldo Kas Usaha saat ini: ${rupiah(saldoKas())}. Nominal ini akan dipindahkan dari Kas ke Saldo Modal Pulsa.</div>` : ''}
     `;
   }
@@ -728,10 +730,10 @@ function renderModal(){
   if(dDesc) dDesc.addEventListener('input', e=>{ f.desc = e.target.value; });
   const mIn = overlay.querySelector('#fModal');
   const jIn = overlay.querySelector('#fJual');
-  if(mIn) mIn.addEventListener('input', e=>{ f.modal = e.target.value; updateLabaPreview(); });
-  if(jIn) jIn.addEventListener('input', e=>{ f.jual = e.target.value; updateLabaPreview(); });
+  if(mIn) mIn.addEventListener('input', e=>{ f.modal = digitsOnly(e.target.value); e.target.value = formatThousands(f.modal); updateLabaPreview(); });
+  if(jIn) jIn.addEventListener('input', e=>{ f.jual = digitsOnly(e.target.value); e.target.value = formatThousands(f.jual); updateLabaPreview(); });
   const aIn = overlay.querySelector('#fAmount');
-  if(aIn) aIn.addEventListener('input', e=>{ f.amount = e.target.value; });
+  if(aIn) aIn.addEventListener('input', e=>{ f.amount = digitsOnly(e.target.value); e.target.value = formatThousands(f.amount); });
 
   overlay.querySelector('#btnCancel').addEventListener('click', closeModal);
   overlay.addEventListener('click', e=>{ if(e.target===overlay) closeModal(); });
